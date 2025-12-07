@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TEKKEN8 ヒット確認トレーニング</title>
+
+  <style>
+    body {
+      font-family: system-ui, sans-serif;
+      background: #f7f7f7;
+      margin: 0;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 700px;
+      background: #fff;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+    video {
+      width: 100%;
+      border-radius: 8px;
+      background: #000;
+    }
+    .buttons {
+      margin-top: 12px;
+      display: flex;
+      gap: 12px;
+    }
+    button {
+      flex: 1;
+      padding: 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.1s;
+    }
+    button:active {
+      transform: translateY(1px);
+    }
+    .hit {
+      background: #0070f3;
+      color: white;
+    }
+    .guard {
+      background: #e53935;
+      color: white;
+    }
+    .start {
+      background: #555;
+      color: white;
+    }
+    .status {
+      margin-top: 12px;
+      padding: 10px;
+      background: #fafafa;
+      border: 1px solid #eee;
+      border-radius: 6px;
+      white-space: pre-line;
+      min-height: 40px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>TEKKEN8 ヒット確認トレーニング</h2>
+
+    <video id="video" playsinline></video>
+
+    <div class="buttons">
+      <button class="start" id="startBtn">次のトライ</button>
+      <button class="hit" id="hitBtn">HIT (J)</button>
+      <button class="guard" id="guardBtn">GUARD (F)</button>
+    </div>
+
+    <div class="status" id="statusBox">「次のトライ」で開始します。</div>
+  </div>
+
+  <script>
+    // ======= クリップ定義（あなたの動画に対応） =======
+    const clips = [
+      {
+        id: "jab_hit",
+        src: "clips/jab-hit.mp4",
+        result: "hit",
+        impactTime: 124 / 60, // 2.0667 秒
+        windowMs: 500         // 30F
+      },
+      {
+        id: "jab_guard",
+        src: "clips/jab-guard.mp4",
+        result: "guard",
+        impactTime: 124 / 60,
+        windowMs: 500
+      }
+    ];
+
+    const video = document.getElementById("video");
+    const startBtn = document.getElementById("startBtn");
+    const hitBtn = document.getElementById("hitBtn");
+    const guardBtn = document.getElementById("guardBtn");
+    const statusBox = document.getElementById("statusBox");
+
+    let currentClip = null;
+    let answered = false;
+
+    function chooseClip() {
+      return clips[Math.floor(Math.random() * clips.length)];
+    }
+
+    function startTrial() {
+      currentClip = chooseClip();
+      answered = false;
+
+      video.src = currentClip.src;
+      video.currentTime = 0;
+      video.play();
+
+      statusBox.textContent = "再生開始… インパクトを見て HIT / GUARD を入力！";
+    }
+
+    function handleAnswer(answer) {
+      if (!currentClip || answered) return;
+      answered = true;
+
+      const now = video.currentTime;
+      const impact = currentClip.impactTime;
+      const deltaMs = (now - impact) * 1000;
+
+      let msg = [];
+
+      // 正解判定
+      if (answer === currentClip.result) {
+        msg.push("結果: ✅ 正解");
+      } else {
+        msg.push(`結果: ❌ 不正解（正解は ${currentClip.result.toUpperCase()}）`);
+      }
+
+      // タイミング判定
+      if (now < impact) {
+        msg.push("タイミング: 早すぎ（インパクト前）");
+      } else {
+        msg.push(`リアクション: ${deltaMs.toFixed(1)} ms`);
+        if (answer === currentClip.result && deltaMs <= currentClip.windowMs) {
+          msg.push("判定: ◎ 間に合った！");
+        } else if (answer === currentClip.result) {
+          msg.push("判定: △ 遅い（正解だが遅延）");
+        }
+      }
+
+      statusBox.textContent = msg.join("\n");
+    }
+
+    startBtn.onclick = () => startTrial();
+    hitBtn.onclick = () => handleAnswer("hit");
+    guardBtn.onclick = () => handleAnswer("guard");
+
+    // ショートカットキー
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "j") handleAnswer("hit");
+      if (e.key === "f") handleAnswer("guard");
+      if (e.code === "Space") startTrial();
+    });
+  </script>
+</body>
+</html>
